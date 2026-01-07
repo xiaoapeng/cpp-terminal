@@ -30,6 +30,8 @@ public:
   static void        startReading();
   static Term::Event getEvent();
   static Term::Event getEventBlocking();
+  static void        pushEvent(const Term::Event& event);  // 添加这行
+  static void        pushEvent(const Term::Event&& event); // 添加这行
 
 private:
   static void read_event();

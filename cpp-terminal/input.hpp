@@ -13,7 +13,7 @@
 
 namespace Term
 {
-
-Term::Event read_event();
-
+  Term::Event read_event();
+  void        push_event(const Term::Event& event);  
+  void        push_event(const Term::Event&& event);
 }  // namespace Term

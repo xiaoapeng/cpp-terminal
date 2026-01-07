@@ -333,10 +333,29 @@ Term::Event Term::Private::Input::getEventBlocking()
   return m_events.pop();
 }
 
+void Term::Private::Input::pushEvent(const Term::Event& event)
+{
+  m_events.push(event);
+}
+
+void Term::Private::Input::pushEvent(const Term::Event&& event)
+{
+  m_events.push(std::move(event));
+}
+
 static Term::Private::Input m_input;
 
 Term::Event Term::read_event()
 {
   m_input.startReading();
   return m_input.getEventBlocking();
+}
+void Term::push_event(const Term::Event& event)
+{
+  m_input.pushEvent(event);
+}
+
+void Term::push_event(const Term::Event&& event)
+{
+  m_input.pushEvent(std::move(event));
 }
