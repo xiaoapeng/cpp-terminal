@@ -52,6 +52,12 @@ set(CPP_TERMINAL_SRC
 
 # create and configure library target
 add_library(cpp-terminal "${CPP_TERMINAL_SRC}")
+target_compile_options(cpp-terminal PRIVATE
+    "$<$<CONFIG:Debug>:-g;-O0>"
+    "$<$<CONFIG:Release>:-g;-O3>"
+    "$<$<CONFIG:MinSizeRel>:-g;-Os>"
+    "$<$<CONFIG:RelWithDebInfo>:-g;-Os>"
+)
 target_link_libraries(cpp-terminal PRIVATE cpp-terminal::cpp-terminal-private)
 target_include_directories(cpp-terminal PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(cpp-terminal PROPERTIES PUBLIC_HEADER "${CPP_TERMINAL_PUBLIC_HEADERS}")

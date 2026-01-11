@@ -70,7 +70,7 @@ public:
 #if defined(_WIN32)
   static const constexpr char* m_file{"CONOUT$"};
 #else
-  static const constexpr char* m_file{"/dev/tty"};
+  static std::string get_tty_path();
 #endif
 };
 
@@ -88,7 +88,7 @@ public:
 #if defined(_WIN32)
   static const constexpr char* m_file{"CONIN$"};
 #else
-  static const constexpr char* m_file{"/dev/tty"};
+  static std::string get_tty_path();
 #endif
 };
 

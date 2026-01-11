@@ -25,6 +25,7 @@
 #else
   #include <sys/ioctl.h>
   #include <unistd.h>
+  #include <climits>
 #endif
 
 #include "cpp-terminal/private/unicode.hpp"
@@ -38,11 +39,50 @@ namespace
 {
 std::array<char, sizeof(Term::Private::InputFileHandler)>  stdin_buffer;   //NOLINT(fuchsia-statically-constructed-objects)
 std::array<char, sizeof(Term::Private::OutputFileHandler)> stdout_buffer;  //NOLINT(fuchsia-statically-constructed-objects)
+
+#if !defined(_WIN32)
+// 通过文件描述符获取对应的TTY路径
+std::string get_tty_path_from_fd(int fd) {
+    char path[PATH_MAX];
+    char proc_path[PATH_MAX];
+    
+    // 构建 /proc/self/fd/<fd> 路径
+    snprintf(proc_path, sizeof(proc_path), "/proc/self/fd/%d", fd);
+    
+    // 读取符号链接指向的实际路径
+    ssize_t len = readlink(proc_path, path, sizeof(path) - 1);
+    if (len != -1) {
+        path[len] = '\0';
+        return std::string(path);
+    }
+    
+    // 如果无法通过/proc获取，回退到传统的ttyname方法
+    const char* tty_path = ttyname(fd);
+    if (tty_path != nullptr) {
+        return std::string(tty_path);
+    }
+    
+    // 如果所有方法都失败，回退到默认的/dev/tty
+    return "/dev/tty";
+}
+#endif
+
 }  // namespace
 
 Term::Private::InputFileHandler&  Term::Private::in  = reinterpret_cast<Term::Private::InputFileHandler&>(stdin_buffer);
 Term::Private::OutputFileHandler& Term::Private::out = reinterpret_cast<Term::Private::OutputFileHandler&>(stdout_buffer);
 
+#if !defined(_WIN32)
+std::string Term::Private::InputFileHandler::get_tty_path() {
+    // 尝试从标准输入获取TTY路径
+    return get_tty_path_from_fd(STDIN_FILENO);
+}
+
+std::string Term::Private::OutputFileHandler::get_tty_path() {
+    // 尝试从标准输出获取TTY路径
+    return get_tty_path_from_fd(STDOUT_FILENO);
+}
+#endif
 //
 
 #ifdef _WIN32
@@ -99,7 +139,13 @@ catch(...)
 }
 
 Term::Private::OutputFileHandler::OutputFileHandler(std::recursive_mutex& io_mutex) noexcept
-try : FileHandler(io_mutex, m_file, "w")
+try : FileHandler(io_mutex, 
+#if defined(_WIN32)
+                  m_file, 
+#else
+                  get_tty_path(), 
+#endif
+                  "w")
 {
   //noop
 }
@@ -109,7 +155,13 @@ catch(...)
 }
 
 Term::Private::InputFileHandler::InputFileHandler(std::recursive_mutex& io_mutex) noexcept
-try : FileHandler(io_mutex, m_file, "r")
+try : FileHandler(io_mutex, 
+#if defined(_WIN32)
+                  m_file, 
+#else
+                  get_tty_path(), 
+#endif
+                  "r")
 {
   //noop
 }
@@ -176,6 +228,7 @@ std::string Term::Private::InputFileHandler::read() const
   static const constexpr std::size_t posix_max_input{256};
   #endif
   static std::size_t nread{std::max(max_input, posix_max_input)};
+
   if(is_stdin_a_tty()) Term::Private::Errno().check_if(::ioctl(Private::in.fd(), FIONREAD, &nread) != 0).throw_exception("::ioctl(Private::in.fd(), FIONREAD, &nread)");  //NOLINT(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
   std::string ret(nread, '\0');
   if(nread != 0)
