@@ -180,12 +180,16 @@ void Term::Terminal::setMode() const
   if(m_options.has(Option::Raw))
   {
     send &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
-    send |= (setFocusEvents() | setMouseEvents());
+    if(!m_options.has(Option::NoMouseFocus)){
+      send |= (setFocusEvents() | setMouseEvents());
+    }
   }
   else if(m_options.has(Option::Cooked))
   {
     send |= (ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
-    send &= ~(setFocusEvents() | setMouseEvents());
+    if(!m_options.has(Option::NoMouseFocus)){
+      send |= (setFocusEvents() | setMouseEvents());
+    }
   }
   if(m_options.has(Option::NoSignalKeys)) { send &= ~ENABLE_PROCESSED_INPUT; }
   else if(m_options.has(Option::SignalKeys)) { send |= ENABLE_PROCESSED_INPUT; }
@@ -214,8 +218,10 @@ void Term::Terminal::setMode() const
       // for EOL instead of "\r\n".
       //send.c_oflag &= ~static_cast<std::size_t>(OPOST);
       send.c_lflag &= ~static_cast<std::size_t>(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-      setMouseEvents();
-      setFocusEvents();
+      if(!m_options.has(Option::NoMouseFocus)){
+        setMouseEvents();
+        setFocusEvents();
+      }
     }
     else if(m_options.has(Option::Cooked))
     {

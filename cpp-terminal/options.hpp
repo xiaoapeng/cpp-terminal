@@ -28,7 +28,8 @@ enum class Option : std::int16_t
   SignalKeys    = 3,   ///< Enable the signal keys (Ctrl+C, etc...), if activated these keys will have their default OS behaviour.
   NoSignalKeys  = -3,  ///< Disable the signal keys (Ctrl+C, etc...) will not be processed by the OS and will appears has standard combination keys.
   Cursor        = 4,   ///< Show the cursor.
-  NoCursor      = -4   ///< Hide the cursor (and restore its states when the program stops).
+  NoCursor      = -4,   ///< Hide the cursor (and restore its states when the program stops).
+  NoMouseFocus = 5,  ///< Disable mouse events. Focus events are also disabled.
 };
 
 class Options
